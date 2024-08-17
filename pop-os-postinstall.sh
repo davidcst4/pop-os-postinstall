@@ -1,182 +1,81 @@
-#!/usr/bin/env bash
-#
-# Github:     https://github.com/davidcst4
-# Author:     David Araujo
-#
-# ------------------------------------------------------------------------------------ #
-#
-# Run script:
-#   $   chmod +x pop-os-postinstall
-#   $   ./pop-os-postinstall.sh
-#
-# ------------------------------------------------------------------------------------ #
+#!/bin/bash
 
-set -e
+# Atualiza o sistema
+sudo apt update && sudo apt upgrade -y
 
-# -------------------------------------- COLORS -------------------------------------- #
+# Instala o Fish Shell e define como shell padrão
+sudo apt install fish -y
+chsh -s /usr/bin/fish
 
-RED='\e[1;91m'
-GREEN='\e[1;92m'
-NO_COLOR='\e[0m'
+# Instala o Starship prompt
+curl -sS https://starship.rs/install.sh | sh
 
-# ------------------------------ DIRECTORY AND ARCHIVES ------------------------------ #
+# Instala o Warp Terminal
+curl https://warp.dev/download | sh
 
-DIRECTORY_DOWNLOADS="$HOME/Downloads/programs"
+# Instala o VSCode
+sudo apt install software-properties-common apt-transport-https wget -y
+wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+sudo apt update
+sudo apt install code -y
 
-# --------------------------------------- URLS --------------------------------------- #
+# Instala o Git
+sudo apt install git -y
 
-WARP_TERMINAL="https://releases.warp.dev/stable/v0.2024.06.25.08.02.stable_01/warp-terminal_0.2024.06.25.08.02.stable.01_amd64.deb"
+# Instala o OnlyOffice
+sudo add-apt-repository ppa:onlyoffice/desktopeditors
+sudo apt update
+sudo apt install onlyoffice-desktopeditors -y
 
-# ------------------------ UPDATING REPOSITORY AND THE SYSTEM ------------------------ #
+# Instala o Draw.io
+wget https://github.com/jgraph/drawio-desktop/releases/download/v20.7.4/draw.io-amd64-20.7.4.deb
+sudo apt install ./draw.io-amd64-20.7.4.deb -y
+rm draw.io-amd64-20.7.4.deb
 
-apt_update(){
-  sudo apt update && sudo apt dist-upgrade -y
-}  
+# Instala o Inkscape
+sudo apt install inkscape -y
 
-# ------------------------------ TESTS AND REQUIREMENTS ------------------------------ #
+# Instala o Upscayl
+wget https://github.com/upscayl/upscayl/releases/download/v2.5.3/upscayl-2.5.3-linux.deb
+sudo apt install ./upscayl-2.5.3-linux.deb -y
+rm upscayl-2.5.3-linux.deb
 
-## ------------------------------------ INTERNET ------------------------------------ ##
+# Instala o GIMP
+sudo apt install gimp -y
 
-test_internet(){
-if ! ping -c 1 8.8.8.8 -q &> /dev/null; then
-  echo -e "${RED}[ERROR] - Your computer does not have an internet connection. Check the network.${NO_COLOR}"
-  exit 1
-else
-  echo -e "${GREEN}[INFO] - Internet connection working normally.${NO_COLOR}"
-fi
-}
+# Instala o Spotify
+curl -sS https://download.spotify.com/debian/pubkey.gpg | sudo apt-key add -
+echo "deb http://repository.spotify.com stable non-free" | sudo tee /etc/apt/sources.list.d/spotify.list
+sudo apt update
+sudo apt install spotify-client -y
 
-## ----------------------- REMOVE POSSIBLE LOCKS FROM THE APT ----------------------- ##
+# Instala o Steam
+sudo apt install steam -y
 
-locks_apt(){
-  sudo rm /var/lib/apt/lists/lock
-  sudo rm /var/lib/dpkg/lock
-  sudo rm /var/lib/dpkg/lock-frontend
-  sudo rm /var/cache/apt/archives/lock
-  sudo dpkg --configure -a
-}
+# Instala o Heroic Games Launcher
+sudo add-apt-repository ppa:philip.scott/heroic-games-launcher
+sudo apt update
+sudo apt install heroic-games-launcher -y
 
-## ----------------------- ADDING/CONFIRM 32-BIT ARCHITECTURE ----------------------- ##
+# Instala o Minecraft Launcher
+wget https://launcher.mojang.com/download/Minecraft.deb
+sudo apt install ./Minecraft.deb -y
+rm Minecraft.deb
 
-add_archi386(){
-  sudo dpkg --add-architecture i386
-}
+# Instala o Google Chrome
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install ./google-chrome-stable_current_amd64.deb -y
+rm google-chrome-stable_current_amd64.deb
 
-## ----------------------------- UPDATE THE REPOSITORY ------------------------------ ##
+# Instala o Discord
+wget -O discord.deb "https://discordapp.com/api/download?platform=linux&format=deb"
+sudo apt install ./discord.deb -y
+rm discord.deb
 
-just_apt_update(){
-  sudo apt update -y
-}
+# Finaliza com uma atualização geral e limpeza
+sudo apt update && sudo apt upgrade -y
+sudo apt autoremove -y
+sudo apt clean
 
-# --------------------------------- INSTALL SOFTWARE --------------------------------- #
-
-PROGRAMS_TO_INSTALL=(
-  gnome-sushi
-  folder-color
-  wget
-  git
-  synaptic
-  ubuntu-restricted-extras
-)
-
-## --------------------- DOWNLOAD AND INSTALL EXTERNAL PROGRAMS --------------------- ##
-
-install_debs(){
-  echo -e "${GREEN}[INFO] - Download packages .deb${NO_COLOR}"
-
-  mkdir "$DIRECTORY_DOWNLOADS"
-
-  wget -c "$WARP_TERMINAL" -P "$DIRECTORY_DOWNLOADS"
-
-## ---------------------------------- INSTALL .DEB ---------------------------------- ##
-
-  echo -e "${GREEN}[INFO] - Installing downloaded .deb packages${NO_COLOR}"
-
-  sudo dpkg -i $DIRECTORY_DOWNLOADS/*.deb
-
-## ----------------------------- INSTALL PROGRAM IN APT ----------------------------- ##
-
-  echo -e "${GREEN}[INFO] - Installing apt packages from the repository${NO_COLOR}"
-
-  for name_program in ${PROGRAMS_TO_INSTALL[@]}; do
-    if ! dpkg -l | grep -q $name_program; then
-      sudo apt install "$name_program" -y
-    else
-      echo "[INSTALLED] - $name_program"
-    fi
-  done
-}
-
-## ---------------------------- INSTALL FLATPAK PACKAGES ---------------------------- ##
-
-install_flatpaks(){
-  echo -e "${GREEN}[INFO] - Installing flatpak packages${NO_COLOR}"
-
-  flatpak install flathub org.gimp.GIMP -y
-  flatpak install flathub com.spotify.Client -y
-  flatpak install flathub com.heroicgameslauncher.hgl -y
-  flatpak install flathub io.gitlab.gregorni.Letterpress -y
-  flatpak install flathub org.onlyoffice.desktopeditors -y
-  flatpak install flathub org.inkscape.Inkscape -y
-  flatpak install flathub org.upscayl.Upscayl -y
-  flatpak install flathub com.valvesoftware.Steam -y
-  flatpak install flathub com.discordapp.Discord -y
-  flatpak install flathub com.visualstudio.code -y
-}
-
-# ------------------------------------ POST INSTALL ------------------------------------- #
-
-system_clean(){
-  apt_update -y
-  flatpak update -y
-  sudo apt autoclean -y
-  sudo apt autoremove -y
-  nautilus -q
-}
-
-# --------------------------------------- EXECUTE --------------------------------------- #
-
-echo -e "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⣠⣤⠤⠶⠶⠶⠶⠶⢤⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⡶⠞⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠛⢶⣤⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⣠⣴⡿⠟⠉⠀⠀⢠⣾⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⣠⣾⡿⠋⠀⠀⠀⠀⠀⣼⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⢠⣾⣿⠋⠀⠀⠀⠀⠀⠀⠀⣿⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣽⠁⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⢠⣾⣿⠋⠀⠀⠀⠀⠀⠀⠀⢀⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡟⡇⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⢠⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣷⠃⠀⠀⠀⠀⠀⠀⠀
-⡀⠀⠘⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢻⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣼⠀⠀⠀⠀⠀⠀⠀⠀
-⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣾⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⡇⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠀⠀⠀⠀⠀⣰⠇⠀⠀⠀⠙⠛⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⣼⡅⡇⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⠃⠀⣀⣀⣀⣠⣤⣤⣤⣴⡿⠿⢿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣾⠀⠀⠀⠀⣴⠏⠀⠀⠀⢰⡋⡆⠀⠀⠀⠀⠀⡠⣲⠝⠋⣹⡏⡿⡅⠀⠀⠀⠀⠀⢀⣴⠄
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣤⣤⠶⣾⡟⠛⠋⠉⠉⠉⠀⠀⢀⣾⡟⠁⠀⠀⣩⣶⢦⠀⠀⠀⠀⠀⠀⠀⣠⡞⢹⣸⠆⠀⠀⣰⡏⠀⠀⠀⠀⡿⢿⠀⠀⠀⠀⢀⡞⡼⠁⠀⣰⡟⢰⢯⠅⠀⠀⠀⠀⢠⡿⠉⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀⠀⠀⠀⠀⠀⣀⣠⣤⡶⠶⠛⠛⠉⠉⣰⡿⠁⠀⠀⠀⠀⠀⠀⠀⣸⣿⠁⠀⠀⣠⠿⠛⣾⢆⠀⠀⠀⠀⠀⣴⠟⠁⢸⡝⡆⠀⢠⡿⠁⠀⠀⠀⠀⣧⢸⠀⠀⠀⠀⡼⣱⠃⠀⢠⣿⠃⢸⢸⡆⠀⠀⠀⢠⡾⠁⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⡇⠀⠀⢀⣠⣤⠶⠞⠛⠉⠁⠀⠀⠀⠀⠀⠀⣴⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⢀⣠⠾⠋⠀⠀⠈⠛⠶⣤⣤⠶⠛⠁⠀⠀⠀⣏⢇⢀⣾⠃⠀⠀⠀⠀⠀⢸⣸⠀⠀⢀⣼⡇⡇⠀⣰⡿⠃⠀⢸⢺⡇⠀⠀⣠⡿⠁⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣽⣷⠾⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⡾⠃⠀⠀⠀⠀⠀⠀⠀⠓⠷⠶⠟⠁⠻⠽⠾⠋⠀⠀⠀⢸⢸⠁⠀⣰⡿⠁⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠛⢹⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣸⡀⣴⡟⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⢀⣴⠞⠋⠀⠀⠀⢸⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢯⠷⠋⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⢀⣴⠟⠁⠀⠀⠀⠀⠀⢸⣧⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⡾⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⣼⠃⠀⠀⠀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⢀⣠⡴⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠹⣧⡀⠀⠀⠀⠀⠀⠀⠀⠛⢁⣀⣤⡴⠞⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠈⠛⠳⠶⠶⠶⠶⠶⠾⠛⠛⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⢀⠀⠀⡀⠀⠀⠀⠀⠀⢀⡀⡀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⢧⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣏⣽⡦⠀⠀⠀⠀⠀⠀⠀⠀⢰⢾⡄⠀⠀⠀⠀⠀⠀⠀⠈⢹⡏⠁⢻⠉⠀⠀⠀⠀⠀⠈⣿⡉⠀⠀⠀⠀⠀⠀⢀⣾⠋⠉⢻⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⡟⠚⣧⡀⠀⠀⠀⠀⠀⠀⠀⢸⡏⢳⣄⡀⠀⠀⠀⠀⠀⠀⢀⣟⠓⢳⡀⠀⠀⠀⠀⠀⠀⠀⢹⣇⢀⣸⠀⠀⠀⠀⠀⠀⠀⣿⠀⠀⠀⠀⠀⠀⠀⠘⢿⣄⠀⣸⠞⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠁⠈⠉⠁⠀⠀⠀⠀⠀⠀⠀⠉⠉⠁⠈⠉⠀⠀⠀⠀⠀⠀⠉⠉⠀⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠀⠀⠀⠀⠀⠀⠰⣆⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
-
-echo -e "${GREEN}[INFO] - Script started${NO_COLOR}"
-
-locks_apt
-test_internet
-locks_apt
-apt_update
-locks_apt
-add_archi386
-just_apt_update
-install_debs
-install_flatpaks
-apt_update
-system_clean
-
-echo -e "${GREEN}[INFO] - Script finished, installation complete!${NO_COLOR}"
+echo "Instalação concluída!"
